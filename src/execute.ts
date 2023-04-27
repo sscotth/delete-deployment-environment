@@ -2,6 +2,7 @@ import * as core from '@actions/core';
 import * as github from '@actions/github';
 import { Octokit } from '@octokit/core';
 import { RequestError } from '@octokit/request-error';
+import { setTimeout as setTimeoutPromise } from 'timers/promises';
 
 interface ListDeploymentIDs {
   owner: string;
@@ -66,7 +67,9 @@ async function listDeployments(
 async function setDeploymentInactive(
   client: Octokit,
   { owner, repo, deploymentId }: Deployment,
+  delay = 100,
 ): Promise<void> {
+  core.info(`deactivating deployment ${deploymentId}`);
   await client.request(
     'POST /repos/{owner}/{repo}/deployments/{deployment_id}/statuses',
     {
@@ -76,12 +79,16 @@ async function setDeploymentInactive(
       state: 'inactive',
     },
   );
+
+  await setTimeoutPromise(delay);
 }
 
 async function deleteDeploymentById(
   client: Octokit,
   { owner, repo, deploymentId }: Deployment,
+  delay = 100,
 ): Promise<void> {
+  core.info(`deleting deployment ${deploymentId}`);
   await client.request(
     'DELETE /repos/{owner}/{repo}/deployments/{deployment_id}',
     {
@@ -90,6 +97,8 @@ async function deleteDeploymentById(
       deployment_id: deploymentId,
     },
   );
+
+  await setTimeoutPromise(delay);
 }
 
 async function deleteTheEnvironment(

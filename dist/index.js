@@ -42,6 +42,7 @@ Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.main = void 0;
 const core = __importStar(__nccwpck_require__(2186));
 const github = __importStar(__nccwpck_require__(5438));
+const promises_1 = __nccwpck_require__(8670);
 function listDeployments(client, { owner, repo, environment, ref = '' }, page = 0) {
     return __awaiter(this, void 0, void 0, function* () {
         core.debug(`Getting list of deployments in environment ${environment}`);
@@ -63,23 +64,27 @@ function listDeployments(client, { owner, repo, environment, ref = '' }, page = 
         return deploymentRefs;
     });
 }
-function setDeploymentInactive(client, { owner, repo, deploymentId }) {
+function setDeploymentInactive(client, { owner, repo, deploymentId, }, delay = 100) {
     return __awaiter(this, void 0, void 0, function* () {
+        core.info(`deactivating deployment ${deploymentId}`);
         yield client.request('POST /repos/{owner}/{repo}/deployments/{deployment_id}/statuses', {
             owner,
             repo,
             deployment_id: deploymentId,
             state: 'inactive',
         });
+        yield (0, promises_1.setTimeout)(delay);
     });
 }
-function deleteDeploymentById(client, { owner, repo, deploymentId }) {
+function deleteDeploymentById(client, { owner, repo, deploymentId }, delay = 100) {
     return __awaiter(this, void 0, void 0, function* () {
+        core.info(`deleting deployment ${deploymentId}`);
         yield client.request('DELETE /repos/{owner}/{repo}/deployments/{deployment_id}', {
             owner,
             repo,
             deployment_id: deploymentId,
         });
+        yield (0, promises_1.setTimeout)(delay);
     });
 }
 function deleteTheEnvironment(client, environment, { owner, repo }) {
@@ -127,7 +132,7 @@ function main() {
         core.debug(`Starting Deployment Deletion action`);
         const client = github.getOctokit(token, {
             throttle: {
-                onRateLimit: (retryAfter = 100, options) => {
+                onRateLimit: (retryAfter = 0, options) => {
                     console.warn(`Request quota exhausted for request ${options.method} ${options.url}`);
                     if (options.request.retryCount === 0) {
                         // only retries once
@@ -135,7 +140,7 @@ function main() {
                         return true;
                     }
                 },
-                onAbuseLimit: (retryAfter = 100, options) => {
+                onAbuseLimit: (retryAfter = 0, options) => {
                     console.warn(`Abuse detected for request ${options.method} ${options.url}`);
                     if (options.request.retryCount === 0) {
                         // only retries once
@@ -3173,6 +3178,10 @@ function checkBypass(reqUrl) {
     if (!reqUrl.hostname) {
         return false;
     }
+    const reqHost = reqUrl.hostname;
+    if (isLoopbackAddress(reqHost)) {
+        return true;
+    }
     const noProxy = process.env['no_proxy'] || process.env['NO_PROXY'] || '';
     if (!noProxy) {
         return false;
@@ -3198,13 +3207,24 @@ function checkBypass(reqUrl) {
         .split(',')
         .map(x => x.trim().toUpperCase())
         .filter(x => x)) {
-        if (upperReqHosts.some(x => x === upperNoProxyItem)) {
+        if (upperNoProxyItem === '*' ||
+            upperReqHosts.some(x => x === upperNoProxyItem ||
+                x.endsWith(`.${upperNoProxyItem}`) ||
+                (upperNoProxyItem.startsWith('.') &&
+                    x.endsWith(`${upperNoProxyItem}`)))) {
             return true;
         }
     }
     return false;
 }
 exports.checkBypass = checkBypass;
+function isLoopbackAddress(host) {
+    const hostLower = host.toLowerCase();
+    return (hostLower === 'localhost' ||
+        hostLower.startsWith('127.') ||
+        hostLower.startsWith('[::1]') ||
+        hostLower.startsWith('[0:0:0:0:0:0:0:1]'));
+}
 //# sourceMappingURL=proxy.js.map
 
 /***/ }),
@@ -6314,7 +6334,9 @@ function fetch(url, opts) {
 				return;
 			}
 
-			destroyStream(response.body, err);
+			if (response && response.body) {
+				destroyStream(response.body, err);
+			}
 		});
 
 		/* c8 ignore next 18 */
@@ -9881,6 +9903,14 @@ module.exports = require("punycode");
 
 "use strict";
 module.exports = require("stream");
+
+/***/ }),
+
+/***/ 8670:
+/***/ ((module) => {
+
+"use strict";
+module.exports = require("timers/promises");
 
 /***/ }),
 
