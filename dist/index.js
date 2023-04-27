@@ -127,7 +127,7 @@ function main() {
         core.debug(`Starting Deployment Deletion action`);
         const client = github.getOctokit(token, {
             throttle: {
-                onRateLimit: (retryAfter = 0, options) => {
+                onRateLimit: (retryAfter = 100, options) => {
                     console.warn(`Request quota exhausted for request ${options.method} ${options.url}`);
                     if (options.request.retryCount === 0) {
                         // only retries once
@@ -135,7 +135,7 @@ function main() {
                         return true;
                     }
                 },
-                onAbuseLimit: (retryAfter = 0, options) => {
+                onAbuseLimit: (retryAfter = 100, options) => {
                     console.warn(`Abuse detected for request ${options.method} ${options.url}`);
                     if (options.request.retryCount === 0) {
                         // only retries once
