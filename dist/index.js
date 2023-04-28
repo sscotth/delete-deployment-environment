@@ -38,11 +38,15 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.main = void 0;
 const core = __importStar(__nccwpck_require__(2186));
 const github = __importStar(__nccwpck_require__(5438));
 const promises_1 = __nccwpck_require__(8670);
+const p_series_1 = __importDefault(__nccwpck_require__(8077));
 function listDeployments(client, { owner, repo, environment, ref = '' }, page = 0) {
     return __awaiter(this, void 0, void 0, function* () {
         core.debug(`Getting list of deployments in environment ${environment}`);
@@ -64,7 +68,7 @@ function listDeployments(client, { owner, repo, environment, ref = '' }, page = 
         return deploymentRefs;
     });
 }
-function setDeploymentInactive(client, { owner, repo, deploymentId, }, delay = 100) {
+function setDeploymentInactive(client, { owner, repo, deploymentId }, delay = 100) {
     return __awaiter(this, void 0, void 0, function* () {
         core.info(`deactivating deployment ${deploymentId}`);
         yield client.request('POST /repos/{owner}/{repo}/deployments/{deployment_id}/statuses', {
@@ -179,10 +183,10 @@ function main() {
                 deploymentIds = deploymentRefs.map((deployment) => deployment.deploymentId);
             }
             core.info(deactivateDeploymentMessage);
-            yield Promise.all(deploymentIds.map((deploymentId) => setDeploymentInactive(client, Object.assign(Object.assign({}, context.repo), { deploymentId }))));
+            yield (0, p_series_1.default)(deploymentIds.map((deploymentId) => () => setDeploymentInactive(client, Object.assign(Object.assign({}, context.repo), { deploymentId }))));
             if (deleteDeployment) {
                 core.info(deleteDeploymentMessage);
-                yield Promise.all(deploymentIds.map((deploymentId) => deleteDeploymentById(client, Object.assign(Object.assign({}, context.repo), { deploymentId }))));
+                yield (0, p_series_1.default)(deploymentIds.map((deploymentId) => () => deleteDeploymentById(client, Object.assign(Object.assign({}, context.repo), { deploymentId }))));
             }
             if (deleteEnvironment) {
                 yield deleteTheEnvironment(client, environment, context.repo);
@@ -9946,6 +9950,33 @@ module.exports = require("zlib");
 
 /***/ }),
 
+/***/ 8077:
+/***/ ((__unused_webpack___webpack_module__, __webpack_exports__, __nccwpck_require__) => {
+
+"use strict";
+__nccwpck_require__.r(__webpack_exports__);
+/* harmony export */ __nccwpck_require__.d(__webpack_exports__, {
+/* harmony export */   "default": () => (/* binding */ pSeries)
+/* harmony export */ });
+async function pSeries(tasks) {
+	for (const task of tasks) {
+		if (typeof task !== 'function') {
+			throw new TypeError(`Expected task to be a \`Function\`, received \`${typeof task}\``);
+		}
+	}
+
+	const results = [];
+
+	for (const task of tasks) {
+		results.push(await task()); // eslint-disable-line no-await-in-loop
+	}
+
+	return results;
+}
+
+
+/***/ }),
+
 /***/ 2020:
 /***/ ((module) => {
 
@@ -9987,6 +10018,34 @@ module.exports = JSON.parse('[[[0,44],"disallowed_STD3_valid"],[[45,46],"valid"]
 /******/ 	}
 /******/ 	
 /************************************************************************/
+/******/ 	/* webpack/runtime/define property getters */
+/******/ 	(() => {
+/******/ 		// define getter functions for harmony exports
+/******/ 		__nccwpck_require__.d = (exports, definition) => {
+/******/ 			for(var key in definition) {
+/******/ 				if(__nccwpck_require__.o(definition, key) && !__nccwpck_require__.o(exports, key)) {
+/******/ 					Object.defineProperty(exports, key, { enumerable: true, get: definition[key] });
+/******/ 				}
+/******/ 			}
+/******/ 		};
+/******/ 	})();
+/******/ 	
+/******/ 	/* webpack/runtime/hasOwnProperty shorthand */
+/******/ 	(() => {
+/******/ 		__nccwpck_require__.o = (obj, prop) => (Object.prototype.hasOwnProperty.call(obj, prop))
+/******/ 	})();
+/******/ 	
+/******/ 	/* webpack/runtime/make namespace object */
+/******/ 	(() => {
+/******/ 		// define __esModule on exports
+/******/ 		__nccwpck_require__.r = (exports) => {
+/******/ 			if(typeof Symbol !== 'undefined' && Symbol.toStringTag) {
+/******/ 				Object.defineProperty(exports, Symbol.toStringTag, { value: 'Module' });
+/******/ 			}
+/******/ 			Object.defineProperty(exports, '__esModule', { value: true });
+/******/ 		};
+/******/ 	})();
+/******/ 	
 /******/ 	/* webpack/runtime/compat */
 /******/ 	
 /******/ 	if (typeof __nccwpck_require__ !== 'undefined') __nccwpck_require__.ab = __dirname + "/";

@@ -3,6 +3,7 @@ import * as github from '@actions/github';
 import { Octokit } from '@octokit/core';
 import { RequestError } from '@octokit/request-error';
 import { setTimeout as setTimeoutPromise } from 'timers/promises';
+import pSeries from 'p-series';
 
 interface ListDeploymentIDs {
   owner: string;
@@ -212,17 +213,19 @@ export async function main(): Promise<void> {
       );
     }
     core.info(deactivateDeploymentMessage);
-    await Promise.all(
-      deploymentIds.map((deploymentId) =>
-        setDeploymentInactive(client, { ...context.repo, deploymentId }),
+    await pSeries(
+      deploymentIds.map(
+        (deploymentId) => () =>
+          setDeploymentInactive(client, { ...context.repo, deploymentId }),
       ),
     );
 
     if (deleteDeployment) {
       core.info(deleteDeploymentMessage);
-      await Promise.all(
-        deploymentIds.map((deploymentId) =>
-          deleteDeploymentById(client, { ...context.repo, deploymentId }),
+      await pSeries(
+        deploymentIds.map(
+          (deploymentId) => () =>
+            deleteDeploymentById(client, { ...context.repo, deploymentId }),
         ),
       );
     }
