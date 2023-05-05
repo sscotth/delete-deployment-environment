@@ -78,6 +78,13 @@ function setDeploymentInactive(client, { owner, repo, deploymentId }, delay = 10
             state: 'inactive',
         });
         yield (0, promises_1.setTimeout)(delay);
+        core.info(`deleting deployment ${deploymentId}`);
+        yield client.request('DELETE /repos/{owner}/{repo}/deployments/{deployment_id}', {
+            owner,
+            repo,
+            deployment_id: deploymentId,
+        });
+        yield (0, promises_1.setTimeout)(delay);
     });
 }
 function deleteDeploymentById(client, { owner, repo, deploymentId }, delay = 100) {
@@ -184,13 +191,18 @@ function main() {
             }
             core.info(deactivateDeploymentMessage);
             yield (0, p_series_1.default)(deploymentIds.map((deploymentId) => () => setDeploymentInactive(client, Object.assign(Object.assign({}, context.repo), { deploymentId }))));
-            if (deleteDeployment) {
-                core.info(deleteDeploymentMessage);
-                yield (0, p_series_1.default)(deploymentIds.map((deploymentId) => () => deleteDeploymentById(client, Object.assign(Object.assign({}, context.repo), { deploymentId }))));
-            }
-            if (deleteEnvironment) {
-                yield deleteTheEnvironment(client, environment, context.repo);
-            }
+            // if (deleteDeployment) {
+            //   core.info(deleteDeploymentMessage);
+            //   await pSeries(
+            //     deploymentIds.map(
+            //       (deploymentId) => () =>
+            //         deleteDeploymentById(client, { ...context.repo, deploymentId }),
+            //     ),
+            //   );
+            // }
+            // if (deleteEnvironment) {
+            //   await deleteTheEnvironment(client, environment, context.repo);
+            // }
             core.info('done');
         }
         catch (error) {

@@ -82,6 +82,18 @@ async function setDeploymentInactive(
   );
 
   await setTimeoutPromise(delay);
+
+  core.info(`deleting deployment ${deploymentId}`);
+  await client.request(
+    'DELETE /repos/{owner}/{repo}/deployments/{deployment_id}',
+    {
+      owner,
+      repo,
+      deployment_id: deploymentId,
+    },
+  );
+
+  await setTimeoutPromise(delay);
 }
 
 async function deleteDeploymentById(
@@ -220,19 +232,19 @@ export async function main(): Promise<void> {
       ),
     );
 
-    if (deleteDeployment) {
-      core.info(deleteDeploymentMessage);
-      await pSeries(
-        deploymentIds.map(
-          (deploymentId) => () =>
-            deleteDeploymentById(client, { ...context.repo, deploymentId }),
-        ),
-      );
-    }
+    // if (deleteDeployment) {
+    //   core.info(deleteDeploymentMessage);
+    //   await pSeries(
+    //     deploymentIds.map(
+    //       (deploymentId) => () =>
+    //         deleteDeploymentById(client, { ...context.repo, deploymentId }),
+    //     ),
+    //   );
+    // }
 
-    if (deleteEnvironment) {
-      await deleteTheEnvironment(client, environment, context.repo);
-    }
+    // if (deleteEnvironment) {
+    //   await deleteTheEnvironment(client, environment, context.repo);
+    // }
     core.info('done');
   } catch (error) {
     core.setFailed((error as RequestError).message);
